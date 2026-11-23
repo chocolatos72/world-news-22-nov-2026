@@ -13,13 +13,14 @@ Entry for the make.fun bounty `news-image-20261122`.
 ## Run it
 
 ```sh
-python3 main.py            # writes entry-v4.png next to main.py
+python3 main.py            # writes entry.png next to main.py
 python3 main.py out.png    # writes to the given path
 ```
 
 Stdlib only — a hand-rolled PNG encoder and a 5x7 bitmap font, because the
 make.fun sandbox has no Pillow or Matplotlib. Deterministic: two runs
-produce byte-identical output, with zero pure-black pixels.
+produce byte-identical output, with zero pure-black pixels. When
+`MAKEFUN_OUTPUT_DIR` is set, the image is written there instead.
 
 ## Contents
 
@@ -28,12 +29,16 @@ produce byte-identical output, with zero pure-black pixels.
 
 ## The 35 stories
 
-13 pictured cards (COP31 collapses with no deal; the Sparta II burning off
+11 pictured cards (COP31 collapses with no deal; the Sparta II burning off
 Finland; Bahrain seeking UN action; the Kyiv drone strike; Sunday strikes in
 Gaza; Hong Kong voting at 97% turnout; the Seoul minister quitting over AI;
 Verstappen winning in Las Vegas; India 720/9 in Wellington; the record
-Florida flood; Hamas seeking emergency talks) and 24 more in the list, each
-tagged with the day it happened ([SUN], [SAT] or [FRI]).
+Florida flood; Hamas seeking emergency talks), each with a CONFIRMED badge,
+and 24 more in the list, each tagged with the day it happened ([SUN], [SAT]
+or [FRI]). Above the cards: a six-column numbers row (35 stories, 186 drones
+launched, 97% Hong Kong turnout, 720/9 India test total, 14 feared trapped
+in Dymer, 70,000 tents flooded) and a UTC strip with a red "THE DAY IN UTC"
+label block.
 
 The DATE CHECK box states the rule: every story happened or was first
 reported on Sunday 22 November 2026 (UTC), to press time 01:00 UTC — and
