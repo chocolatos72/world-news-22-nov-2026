@@ -9,7 +9,7 @@ fresh from the approved image and the build notes — no earlier entry code was
 read. Stdlib only (zlib + struct): hand-rolled PNG encoder and a 5x7 bitmap
 font, because the make.fun sandbox has no Pillow or Matplotlib.
 
-Run:  python3 main.py            -> writes entry-v4.png next to this file
+Run:  python3 main.py            -> writes entry-v4.png next to this file, or $MAKEFUN_OUTPUT_DIR/entry.png when that is set
       python3 main.py out.png    -> writes to the given path
 Deterministic: two runs produce byte-identical output.
 """
@@ -1162,8 +1162,16 @@ def render():
 
 
 def main(argv):
-    out = argv[1] if len(argv) > 1 else os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "entry-v4.png")
+    if len(argv) > 1:
+        out = argv[1]
+    elif os.environ.get("MAKEFUN_OUTPUT_DIR"):
+        out = os.path.join(os.environ["MAKEFUN_OUTPUT_DIR"], "entry.png")
+    else:
+        out = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "entry-v4.png")
+    outdir = os.path.dirname(out)
+    if outdir:
+        os.makedirs(outdir, exist_ok=True)
     cv = render()
     if MISSING:
         print("MISSING GLYPHS:", sorted(set(MISSING)))
