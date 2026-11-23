@@ -17,7 +17,8 @@ python3 main.py            # writes entry.png next to main.py
 python3 main.py out.png    # writes to the given path
 ```
 
-Stdlib only — a hand-rolled PNG encoder and a 5x7 bitmap font, because the
+Stdlib only — a hand-rolled PNG encoder, a 5x7 bitmap font, and a serif
+face for the masthead date and the three lead headlines, because the
 make.fun sandbox has no Pillow or Matplotlib. Deterministic: two runs
 produce byte-identical output, with zero pure-black pixels. When
 `MAKEFUN_OUTPUT_DIR` is set, the image is written there instead.
@@ -33,9 +34,11 @@ produce byte-identical output, with zero pure-black pixels. When
 Finland; Bahrain seeking UN action; the Kyiv drone strike; Sunday strikes in
 Gaza; Hong Kong voting at 97% turnout; the Seoul minister quitting over AI;
 Verstappen winning in Las Vegas; India 720/9 in Wellington; the record
-Florida flood; Hamas seeking emergency talks), each with a CONFIRMED badge,
-and 24 more in the list, each tagged with the day it happened ([SUN], [SAT]
-or [FRI]). Above the cards: a six-column numbers row (35 stories, 186 drones
+Florida flood; Hamas seeking emergency talks), nine with a CONFIRMED badge
+and two with a CLAIM badge (reported, not yet verified — the Kyiv drone
+strike and the Sunday strikes in Gaza), with a legend in the footer, and 24
+more in the list, each tagged with the day it happened ([SUN], [SAT]
+or [FRI]). Above the cards: a dark-navy six-column numbers band (35 stories, 186 drones
 launched, 97% Hong Kong turnout, 720/9 India test total, 14 feared trapped
 in Dymer, 70,000 tents flooded) and a UTC strip with a red "THE DAY IN UTC"
 label block.

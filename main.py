@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-"""news-image-20261122 -- v5, written from scratch (stdlib only).
+"""news-image-20261122 -- v6, round 4 (stdlib only).
 
 One 1024x1024 PNG summing up Sunday 22 November 2026 world news:
 11 pictured cards + 24 list stories = 35 stories, plus a UTC strip,
 a DATE CHECK box and a world map with 11 numbered dots.
 
+v6 (top-5 findings): bold serif masthead date + serif big-card
+titles, per-story certainty pills (CONFIRMED green / CLAIM amber)
+with a footer legend, and the 6 key numbers on a dark navy band.
+
 No Pillow, no font files: every letter is drawn from the 5x7 bitmap
-glyph table below, written by hand for this program.  Output goes to
-$MAKEFUN_OUTPUT_DIR/entry.png when that variable is set, otherwise to
-entry-v5.png next to this file.  Rendering is fully deterministic.
+glyph table below, written by hand for this program (the serif
+display type uses a 7x10 table with the same hand-drawn approach).
+Output goes to $MAKEFUN_OUTPUT_DIR/entry.png when that variable is
+set, otherwise to entry-v6.png next to this file.  Rendering is
+fully deterministic.
 """
 import os
 import struct
@@ -354,6 +360,515 @@ def wrap_words(s, maxw, scale, track=0.0, upper=True):
     return lines
 
 
+# ---------------------------------------------------------------- serif display type (v6)
+# Times-style serif for the masthead date and the 3 big-card titles
+# only — the hierarchy the top-5 entries share (giant serif date,
+# bold serif lead titles, readable even at thumbnail size). The
+# glyphs are the 7x10 table from the round-7/18 serif system (only
+# the letters/digits/punctuation the date and the 3 big titles use),
+# serifized with 1-cell feet on straight stems and rendered with
+# 3x supersampling so edges stay smooth. Everything else keeps the
+# sharp 5x7 bitmap font.
+_SERIF_SRC = """
+A
+...#...
+..#.#..
+..#.#..
+.#...#.
+.#...#.
+.#...#.
+#######
+.#...#.
+#.....#
+#.....#
+
+B
+######.
+#.....#
+#.....#
+#.....#
+######.
+#.....#
+#.....#
+#.....#
+#.....#
+######.
+
+C
+..####.
+.#....#
+#......
+#......
+#......
+#......
+#......
+.#.....
+.#....#
+..####.
+
+D
+#####..
+#....#.
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#....#.
+#####..
+
+E
+#######
+#......
+#......
+#......
+#####..
+#......
+#......
+#......
+#......
+#######
+
+F
+#######
+#......
+#......
+#......
+#####..
+#......
+#......
+#......
+#......
+#......
+
+G
+..####.
+.#....#
+#......
+#......
+#......
+#...###
+#.....#
+#.....#
+.#....#
+..####.
+
+H
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#######
+#.....#
+#.....#
+#.....#
+#.....#
+
+I
+.#####.
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+.#####.
+
+K
+#....#.
+#...#..
+#..#...
+#.#....
+##.....
+#.#....
+#..#...
+#...#..
+#....#.
+#.....#
+
+L
+#......
+#......
+#......
+#......
+#......
+#......
+#......
+#......
+#......
+#######
+
+M
+#.....#
+##...##
+#.#.#.#
+#.#.#.#
+#..#..#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+
+N
+#.....#
+##....#
+#.#...#
+#..#..#
+#...#.#
+#....##
+#.....#
+#.....#
+#.....#
+#.....#
+
+O
+..###..
+.#...#.
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+.#...#.
+..###..
+
+P
+######.
+#.....#
+#.....#
+#.....#
+######.
+#......
+#......
+#......
+#......
+#......
+
+R
+######.
+#.....#
+#.....#
+#.....#
+######.
+#.#....
+#..#...
+#...#..
+#....#.
+#.....#
+
+S
+.#####.
+#.....#
+#......
+#......
+.####..
+.....#.
+......#
+#.....#
+#.....#
+.#####.
+
+T
+#######
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+
+U
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+.#...#.
+..###..
+
+V
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+.#...#.
+.#...#.
+..#.#..
+...#...
+
+Y
+#.....#
+#.....#
+.#...#.
+..#.#..
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+
+0
+..###..
+.#...#.
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+.#...#.
+..###..
+
+1
+...#...
+..##...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+...#...
+.#####.
+
+2
+.####..
+#....#.
+.....#.
+....#..
+...#...
+..#....
+.#.....
+#......
+#......
+#######
+
+3
+.####..
+#....#.
+.....#.
+.....#.
+..###..
+.....#.
+.....#.
+#....#.
+#....#.
+.####..
+
+6
+..###..
+.#.....
+#......
+#......
+#####..
+#....#.
+#....#.
+#....#.
+.#...#.
+..###..
+
+,
+.......
+.......
+.......
+.......
+.......
+.......
+.......
+..##...
+..##...
+.#.....
+
+SPACE
+.......
+.......
+.......
+.......
+.......
+.......
+.......
+.......
+.......
+.......
+"""
+
+
+def _parse_serif(src):
+    out = {}
+    for block in src.strip().split("\n\n"):
+        lines = block.split("\n")
+        if len(lines) < 11:
+            continue
+        key = lines[0]
+        if key == "SPACE":
+            key = " "
+        rows = [(r + ".......")[:7] for r in lines[1:11]]
+        out[key] = tuple(rows)
+    return out
+
+
+def _serifize(rows):
+    # Times-style feet: on the top and bottom rows, extend the ink
+    # of a straight vertical stem sideways (only where the next row
+    # keeps ink in that column, i.e. a real stem, so round letters
+    # like O/C/S keep their curves). Feet are 1 cell each side.
+    g = [list(r) for r in rows]
+    for r in (0, 9):
+        step = 1 if r == 0 else -1
+        for c in range(7):
+            if g[r][c] != "#":
+                continue
+            if g[r + step][c] != "#":
+                continue
+            run = 0
+            rr = r
+            while 0 <= rr < 10 and g[rr][c] == "#" and run < 3:
+                run += 1
+                rr += step
+            reach = 1
+            for d in range(1, reach + 1):
+                for cc in (c - d, c + d):
+                    if 0 <= cc < 7 and g[r][cc] == ".":
+                        g[r][cc] = "#"
+    return tuple("".join(r) for r in g)
+
+
+_SERIF_SANS = _parse_serif(_SERIF_SRC)
+SERIF = {k: (_serifize(v) if (("A" <= k <= "Z") or ("0" <= k <= "9"))
+                else v)
+         for k, v in _SERIF_SANS.items()}
+
+AA_SS = 3  # supersampling factor for smooth (anti-aliased) serif text
+
+
+def _fallback_serif_glyph(ch):
+    # Anything the serif table lacks: stretch the 5x7 glyph into
+    # the 7x10 grid (rows and columns nearest-neighbour mapped).
+    old = FONT.get(ch)
+    if old is None:
+        if ch not in MISSING and ch != " ":
+            MISSING.append(ch)
+        return tuple("......." for _ in range(10))
+    rows = []
+    for r in range(10):
+        orow = old[min(6, r * 7 // 10)]
+        rows.append("".join("#" if orow[min(4, c * 5 // 7)] == "1"
+                            else "." for c in range(7)))
+    return tuple(rows)
+
+
+def _blit_cov(x, y, gw, gh, cov, c):
+    for oy in range(gh):
+        yy = y + oy
+        if yy < 0 or yy >= H:
+            continue
+        base = oy * gw
+        for ox in range(gw):
+            a = cov[base + ox]
+            if not a:
+                continue
+            xx = x + ox
+            if xx < 0 or xx >= W:
+                continue
+            i = (yy * W + xx) * 3
+            ia = 255 - a
+            buf[i] = (c[0] * a + buf[i] * ia) // 255
+            buf[i + 1] = (c[1] * a + buf[i + 1] * ia) // 255
+            buf[i + 2] = (c[2] * a + buf[i + 2] * ia) // 255
+
+
+_SERIF_COV_CACHE = {}
+
+
+def _serif_cov(ch, unit, bold):
+    key = (ch, unit, bold)
+    hit = _SERIF_COV_CACHE.get(key)
+    if hit is not None:
+        return hit
+    gl = SERIF.get(ch) or _fallback_serif_glyph(ch)
+    # bold 1 (True): one extra 1 px right shift (v6 date/titles).
+    # bold 2: two extra shifts — strokes 2 px thicker (v6r2 masthead
+    # date, Sari: "ditebelin"). The glyph box grows by the same amount
+    # so neighbouring glyphs never overlap.
+    gw = int(round(7 * unit)) + (2 if bold == 2 else 1 if bold else 0)
+    gh = int(round(10 * unit))
+    hw, hh = gw * AA_SS, gh * AA_SS
+    sbuf = bytearray(hw * hh)
+    shifts = (0, AA_SS, 2 * AA_SS) if bold == 2 else (0, AA_SS) if bold else (0,)
+    for r in range(10):
+        row = gl[r]
+        for col in range(7):
+            if row[col] != "#":
+                continue
+            for sh in shifts:
+                x0 = int(round(col * unit * AA_SS)) + sh
+                y0 = int(round(r * unit * AA_SS))
+                x1 = int(round((col + 1) * unit * AA_SS)) + sh
+                y1 = int(round((r + 1) * unit * AA_SS))
+                for yy in range(max(0, y0), min(hh, y1)):
+                    base = yy * hw
+                    for xx in range(max(0, x0), min(hw, x1)):
+                        sbuf[base + xx] = 1
+    cov = bytearray(gw * gh)
+    for oy in range(gh):
+        for ox in range(gw):
+            s = 0
+            for dy in range(AA_SS):
+                by = oy * AA_SS + dy
+                if by >= hh:
+                    break
+                base = by * hw
+                for dx in range(AA_SS):
+                    bx = ox * AA_SS + dx
+                    if bx < hw:
+                        s += sbuf[base + bx]
+            cov[oy * gw + ox] = (s * 255) // (AA_SS * AA_SS)
+    res = (gw, gh, cov)
+    _SERIF_COV_CACHE[key] = res
+    return res
+
+
+def serif_w(s, unit, bold=False, track=1.0):
+    if not s:
+        return 0.0
+    w = 0.0
+    for ch in s:
+        gw, _, _ = _serif_cov(ch, unit, bold)
+        w += gw + track
+    return w - track
+
+
+def serif_draw(x, y, s, unit, c, bold=False, track=1.0):
+    cx = float(x)
+    iy = int(round(y))
+    for ch in s:
+        gw, gh, cov = _serif_cov(ch, unit, bold)
+        _blit_cov(int(round(cx)), iy, gw, gh, cov, c)
+        cx += gw + track
+    return serif_w(s, unit, bold=bold, track=track)
+
+
+def serif_draw_centered(cx, y, s, unit, c, bold=False, track=1.0):
+    w = serif_w(s, unit, bold=bold, track=track)
+    serif_draw(int(round(cx - w / 2)), y, s, unit, c, bold=bold, track=track)
+    return w
+
+
 # ---------------------------------------------------------------- PNG out
 def write_png(path):
     raw = bytearray()
@@ -390,10 +905,10 @@ CARDS = [
     dict(n=3, region="MIDDLE EAST", strip="3 \u00b7 MIDDLE EAST \u00b7 BAHRAIN",
          title=["BAHRAIN SEEKS UN ACTION"],
          sub=["TEHRAN HIT US BASES;", "TANKERS STRUCK."]),
-    dict(n=4, region="EUROPE", strip="4 \u00b7 EUROPE",
+    dict(n=4, region="EUROPE", strip="4 \u00b7 EUROPE", status="CLAIM",
          title=["DRONE FLATTENS", "KYIV FLATS"],
          sub=["14 FEARED TRAPPED;", "186 DRONES LAUNCHED."]),
-    dict(n=5, region="MIDDLE EAST", strip="5 \u00b7 MIDDLE EAST",
+    dict(n=5, region="MIDDLE EAST", strip="5 \u00b7 MIDDLE EAST", status="CLAIM",
          title=["SUNDAY STRIKES", "KILL TWO"],
          sub=["AL-MAWASI HIT; RAIN", "FLOODS 70,000 TENTS."]),
     dict(n=6, region="ASIA", strip="6 \u00b7 ASIA",
@@ -468,39 +983,30 @@ def draw_header():
     s = "35 STORIES \u00b7 7 REGIONS \u00b7 EVERY ONE DATED SUNDAY, 22 NOVEMBER 2026"
     w = text_w(s, 1.15, 0.5)
     draw_text(int(round(1000 - w)), 14, s, 1.15, (205, 210, 215), track=0.5)
-    draw_centered(512, 36, "SUNDAY, 22 NOVEMBER 2026", 5.0, INK,
-                  bold=True, track=2.75)
+    # v6: masthead date in bold serif (top-5 hierarchy) — 40 px tall,
+    # still giant and exactly centred (serif_draw_centered).
+    # v6r2 (Sari): thicker + wider tracking — bold 2 (strokes 2 px
+    # thicker) and track 3.0. Width 789 px, still one line, centred.
+    serif_draw_centered(512, 33, "SUNDAY, 22 NOVEMBER 2026", 4.0, INK,
+                        bold=2, track=3.0)
     draw_centered(512, 77,
                   "COP31 COLLAPSES WITH NO DEAL \u00b7 SPARTA II STILL BURNING "
                   "\u00b7 BAHRAIN SEEKS UN ACTION ON IRAN",
                   1.4, RED, bold=True, track=0.85)
     rect(24, 91, 1000, 94, INK)
-    # Stats: 6 number columns (old "35 STORIES" style).
-    # Round 26: the "RINGKASAN" word and its red label bar were removed
-    # (Sari) — only the 6 number columns remain, re-centred in the
-    # frame (numbers y 108, labels y 131) so no empty band is left
-    # where the bar used to be.
-    # Round 29 (Sari): the outer box frame is GONE — numbers and labels
-    # stay exactly where they are, on plain cream paper, with only
-    # thin vertical dividers between the columns (like the UTC strip
-    # dividers) to separate them.
+    # v6: the 6 number columns become a DARK BAND (top-5 anchor:
+    # "THE DAY IN NUMBERS" / big-number rows) — dark navy, never
+    # pure black, with big bright numbers and small gold labels.
+    # Same 6 numbers, same columns; band y 96..146 sits between the
+    # masthead rule and the region strip.
+    rect(24, 96, 1000, 146, NAVY)
     colw2 = (1000 - 24) / 6.0
     for i, (num, lab) in enumerate(RINGKASAN):
         cx = 24 + colw2 * (i + 0.5)
-        # Round 25: numbers shrunk 2.4 -> 2.0 and labels moved to their
-        # own row so the red digits can no longer bleed into the thin
-        # label strokes at preview size; labels also upped to 1.1 bold.
-        # Round 31 (Sari): the numbers row goes BIG again — numbers
-        # back to 2.0 and labels to 1.1 (the round-29 sizes), with
-        # roomier spacing (numbers y 106, labels y 134: a 14 px gap
-        # between the digits and the labels). 2.0 and 1.1 were already
-        # verified readable in round 29; their glyph rows land on
-        # distinct pixel rows (2.0 -> 0,2,4,6,8,10,12; 1.1 ->
-        # 0,1,2,3,4,6,7), so nothing is sliced off.
-        draw_centered(cx, 106, num, 2.0, RED, bold=True, track=1.0)
-        draw_centered(cx, 134, lab, 1.1, INK, bold=True, track=0.5)
+        draw_centered(cx, 104, num, 2.2, PAPER, bold=True, track=1.0)
+        draw_centered(cx, 130, lab, 1.1, GOLD, bold=True, track=0.5)
         if i:
-            vline(int(round(24 + colw2 * i)), 102, 142, UTC_DIV)
+            vline(int(round(24 + colw2 * i)), 100, 142, UTC_DIV)
     # region strip: 7 equal colour blocks
     # Round 30: moved up 10 px (gap below the numbers row tightened).
     x = 24
@@ -585,11 +1091,14 @@ def draw_card(card, x, y, w, h, scene_h, big):
     SCENES[card["n"]](sx, sy, w - 2, scene_h)
     reset_clip()
     draw_badge(x + 14, sy + 13, card["n"])
-    # CONFIRMED pill, bottom-right of the scene. Top-right was rejected:
-    # it would cover the sun (scene 1), the flag (scene 2), the moon
-    # (scene 3) and the scoreboard (scene 9). Bottom-right is plain
-    # background (sea / water / field / table) in all 11 scenes.
-    ptxt = "CONFIRMED"
+    # v6: the pill names the story's certainty (top-5 labels).
+    # CONFIRMED for verified/official stories; CLAIM (amber) for
+    # reported-but-unverified figures — card 4 "14 feared trapped"
+    # (an estimate, rescue ongoing) and card 5 Gaza toll (a single
+    # secondary source; the refresh notes flag it provisional).
+    # Bottom-right of the scene, as decided in round 24.
+    ptxt = card.get("status", "CONFIRMED")
+    pcol = (22, 96, 54) if ptxt == "CONFIRMED" else (150, 98, 12)
     # Round 25: pill text 0.85 -> 1.0 (fractional cells dropped strokes,
     # so "CONFIRMED" read as "CON IRMED" at preview); pill widened
     # to fit and height 11 -> 12.
@@ -597,7 +1106,7 @@ def draw_card(card, x, y, w, h, scene_h, big):
     ph = 12
     px1 = sx + (w - 2) - 5 - pw
     py1 = sy + scene_h - 5 - ph
-    rect(px1, py1, px1 + pw, py1 + ph, (22, 96, 54))
+    rect(px1, py1, px1 + pw, py1 + ph, pcol)
     rect(px1, py1, px1 + pw, py1 + 1, WHITE)
     rect(px1, py1 + ph - 1, px1 + pw, py1 + ph, WHITE)
     rect(px1, py1, px1 + 1, py1 + ph, WHITE)
@@ -608,7 +1117,10 @@ def draw_card(card, x, y, w, h, scene_h, big):
     hline(x + 12, x + w - 12, ry, RULE)
     if big:
         ty = ry + 8
-        draw_text(x + 12, ty, card["title"][0], 1.75, INK, bold=True, track=1.5)
+        # v6: big-card titles in bold serif (top-5 hierarchy) — 15 px
+        # tall at unit 1.5, still one line (longest title 294 px of
+        # the 296 px text zone, track 0.8).
+        serif_draw(x + 12, ty, card["title"][0], 1.5, INK, bold=True, track=0.8)
         sy2 = ty + 18
         for j, ln in enumerate(card["sub"]):
             draw_text(x + 12, sy2 + j * 16, ln, 1.7, rc, track=1.3)
@@ -642,8 +1154,12 @@ def draw_list():
     # pitch and renders fine.
     # NOTE: pitch must stay an INTEGER — 13.5 put odd rows on half
     # pixels and the rasteriser dropped glyph row 0 on those rows,
-    # slicing the list text in half. 13 is safe; last row ends y 877,
-    # text to ~886, well above the DATE CHECK box (y 908).
+    # slicing the list text in half.
+    # v6r2 (Sari: "listnya pasin jangan ada kosong dibawah"): pitch
+    # 13 -> 14, rows start y 738, font scale 1.0 -> 1.1. Last row
+    # y 892, ink 894..902 — 5 px above the DATE CHECK box (y 908),
+    # both columns ending on the same line. Scale 1.1 verified
+    # against the longest row (row 6 ends x ~451, tag starts 471).
     draw_text(24, 711, "ALSO ON SUNDAY, 22 NOVEMBER \u2014 24 MORE STORIES",
               2.15, RED, bold=True, track=1.2)
     hline(24, 1000, 730, RED)
@@ -652,15 +1168,15 @@ def draw_list():
         tag_right = 500 if col == 0 else 1000
         for i in range(12):
             n, place, head, day, region = LIST[col * 12 + i]
-            y = 734 + i * 13
+            y = 738 + i * 14
             rc = REGION[region]
             x = x0
-            x += draw_text(x, y + 2, "%d." % n, 1.0, INK, bold=True)
-            x += draw_text(x, y + 2, " " + place + " \u2013 ", 1.0, rc, bold=True)
-            draw_text(x, y + 2, head, 1.0, rc)
+            x += draw_text(x, y + 2, "%d." % n, 1.1, INK, bold=True)
+            x += draw_text(x, y + 2, " " + place + " \u2013 ", 1.1, rc, bold=True)
+            draw_text(x, y + 2, head, 1.1, rc)
             tag = "[%s]" % day
-            tw = text_w(tag, 1.0, 0.0)
-            draw_text(int(round(tag_right - tw)), y + 2, tag, 1.0,
+            tw = text_w(tag, 1.1, 0.0)
+            draw_text(int(round(tag_right - tw)), y + 2, tag, 1.1,
                       DAYCOL[day], bold=True)
 
 
@@ -732,11 +1248,12 @@ def draw_bottom():
     # ---- map (708..1000, 908..1015)
     draw_map()
     # ---- footer
+    # v6: footer carries the pill legend (region counts already live
+    # in the region strip above the UTC strip).
     draw_centered(512, 1015,
-                  "EUROPE 10 \u00b7 MIDDLE EAST 8 \u00b7 ASIA 6 \u00b7 AMERICAS 5 "
-                  "\u00b7 AFRICA 2 \u00b7 OCEANIA 2 \u00b7 WORLD 2 \u00b7 SOURCES: "
-                  "REUTERS \u00b7 AP \u00b7 BBC \u00b7 AL JAZEERA \u00b7 F1.COM "
-                  "\u00b7 CRICBUZZ",
+                  "CONFIRMED = VERIFIED BY SOURCES \u00b7 CLAIM = REPORTED, "
+                  "NOT YET VERIFIED \u00b7 SOURCES: REUTERS \u00b7 AP \u00b7 BBC "
+                  "\u00b7 AL JAZEERA \u00b7 F1.COM \u00b7 CRICBUZZ",
                   1.1, GREY, track=0.3)
 
 
@@ -1401,7 +1918,7 @@ def main():
         path = os.path.join(outdir, "entry.png")
     else:
         here = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(here, "entry-v5.png")
+        path = os.path.join(here, "entry-v6.png")
     size = write_png(path)
     if MISSING:
         sys.stderr.write("MISSING glyphs: %r\n" % (MISSING,))
